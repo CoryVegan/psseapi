@@ -17,7 +17,11 @@ def function_factory(target):
         "?": "invalid"
     }
     # TODO variable lenght args
-    def inner(sid, flag, strings):
+    def inner(**kwargs):
+        import psspy
+
+        strings = kwargs["string"]
+
         # Get types
         ierr, datatypes = eval("psspy.a{}types".format(target, strings))(strings)
 
@@ -27,7 +31,8 @@ def function_factory(target):
         for datatype, string in zip(datatypes, strings):
             target_type = target_types[datatype]
 
-            ierr, data = eval("psspy.a{}{}".format(target, target_type))(sid, flag, string)
+            kwargs["string"] = string
+            ierr, data = eval("psspy.a{}{}".format(target, target_type))(**kwargs)
             keys.append(string)
             values.append(data[0])
 
@@ -38,7 +43,6 @@ def function_factory(target):
         return d
 
     return inner
-
 
 
 ssdr_methods = [
