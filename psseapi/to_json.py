@@ -13,11 +13,51 @@ class ComplexEncoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, obj)
 
 
+def update_index(dict):
+    """Change the index of the components to a tuple
+
+    Args:
+        dict: representation of the network
+    """
+    new_dict = {k:{} for k in dict}
+
+    for k, v in dict["BUS"].items():
+        new_k = v["NUMBER"]
+        new_dict["BUS"][new_k] = v
+
+    for k, v in dict["GEN"].items():
+        new_k = v["NUMBER"]
+        new_dict["GEN"][new_k] = v
+
+    for k, v in dict["LOAD"].items():
+        new_k = v["NUMBER"]
+        new_dict["LOAD"][new_k] = v
+
+    for k, v in dict["SWSH"].items():
+        new_k = v["NUMBER"]
+        new_dict["SWSH"][new_k] = v
+    
+    for k, v in dict["BR"].items():
+        new_k = str((v["FROMNUMBER"], v["TONUMBER"], v["ID"]))
+        new_dict["BR"][new_k] = v
+
+    for k, v in dict["TR"].items():
+        new_k = str((v["FROMNUMBER"], v["TONUMBER"], v["ID"]))
+        new_dict["TR"][new_k] = v
+
+    for k, v in dict["TR3"].items():
+        new_k = str((v["WIND1NUMBER"], v["WIND2NUMBER"], v["WIND3NUMBER"], v["ID"]))
+        new_dict["TR3"][new_k] = v
+
+    for k, v in dict["TR3WD"].items():
+        k = str((v["WIND1NUMBER"], v["WIND2NUMBER"], v["WIND3NUMBER"], v["ID"]))
+        new_dict["TR3"][k]["WINDING-{}".format(v["WNDNUM"])] = v
+
+    return new_dict
+
 
 def generate_json_data():
-    """give a mapping of the principal elements of a network
-    Note:
-        The index in every component means nothing related to PSSE.
+    """Give a mapping of the principal elements of a network
 
     Returns:
         dict: the mapping of the network
@@ -62,7 +102,7 @@ def generate_json_data():
         owner=1,
         ties=1,
         entry=2,
-        string=["FROMNUMBER", "TONUMBER", "ID", "NMETERNUMBER", "CODE", "RATEA", "RATEB", "RATEC", "RATIO", "RATIO2", "VMAX", "VMIN", "RMAX", "RMIN", "STEP", "RX", "YMAG", "ANGLE"]
+        string=["FROMNUMBER", "TONUMBER", "ID", "NMETERNUMBER", "CODE", "RATEA", "RATEB", "RATEC", "RATIO", "RATIO2", "VMAX", "VMIN", "RMAX", "RMIN", "STEP", "RXNOM", "YMAG", "ANGLE"]
     )
 
     tr3 = ssdr.atr3(
@@ -70,10 +110,10 @@ def generate_json_data():
         owner=1,
         ties=1, # ignored by sid
         flag=1,
-        string=["WIND1NUMBER", "WIND2NUMBER", "WIND3NUMBER", "STATUS", "RX1-2NOM", "RX2-3NOM", "RX3-1NOM", "YMAG"] 
+        string=["WIND1NUMBER", "WIND2NUMBER", "WIND3NUMBER", "STATUS", "RX1-2NOM", "RX2-3NOM", "RX3-1NOM", "YMAG", "ID"] 
     )
 
-    tr3wd = ssdr.atr3(
+    tr3wd = ssdr.awnd(
         sid=-1,
         owner=1,
         ties=1,
@@ -93,7 +133,7 @@ def generate_json_data():
         string=["BUSES"]
     )
 
-    return {
+    dict_fixed = update_index({
         "BUS": bus,
         "GEN": gen,
         "LOAD": load,
@@ -102,4 +142,6 @@ def generate_json_data():
         "TR": tr,
         "TR3": tr3,
         "TR3WD": tr3wd
-    }
+    })
+
+    return dict_fixed
